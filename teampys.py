@@ -7,8 +7,17 @@ from flask import send_file
 import uuid
 import random
 import string
+import json
+from flask_pymongo import PyMongo
+from flask import jsonify
+
 
 app = Flask(__name__)
+
+############  Mongo DB connection ################
+app.config["MONGO_DBNAME"] = "rats"
+app.config["MONGO_URI"] = "mongodb://localhost:27017/rats"
+mongo = PyMongo(app)
 
 # all scratchcards
 cards = {}
@@ -116,6 +125,7 @@ class Card():
         self.solution = solution
         self.color = color
 
+
     @staticmethod
     def new_card(label, team, questions, alternatives, solution, color):
         id = '{}'.format(uuid.uuid4())
@@ -203,7 +213,8 @@ class RAT():
         self.card_ids_by_team = {}
         self.grabbed_rats = []
         self.team_colors = team_colors
-
+        #mongo.db.rat.insert_one(RAT(private_id,public_id,label,teams,questions,alternatives,solution,team_colors))
+    
     def get_status_table(self, base_url):
         s = []
         s.append('<table class="table table-sm">')
@@ -321,13 +332,14 @@ def create():
         card = Card.new_card(label, str(team), int(questions), int(alternatives), solution, rat.team_colors[team-1])
         cards[card.id] = card
         rat.card_ids_by_team[str(team)] = card.id
+               
     return redirect("../teacher/{}".format(rat.private_id), code=302)
 
 @app.route('/teacher/<private_id>/')
 def show_rat_teacher(private_id):
     global rats_by_private_id
     if private_id in rats_by_private_id:
-        rat = rats_by_private_id[private_id]
+        rat = rats_by_private_id[private_id] 
         return rat.html_teacher(request.host_url)
     return "Could not find rat. Currently there are {} RATs stored.".format(len(rats_by_private_id))
 
@@ -376,3 +388,24 @@ def download(private_id, format):
         rat = rats_by_private_id[private_id]
         return rat.download(format)
     return "Could not find rat. Currently there are {} RATs stored.".format(len(rats_by_private_id))
+
+############  DATA COllECTION  ###############
+
+@app.route('/data', methods=['GET','POST'])
+def data(**kwargs):    
+    ''' data collection '''
+    if request.method == 'GET':
+        query = request.args
+        data = mongo.db.rats.find_one(query)
+        return jsonify(data),200
+    
+    data = request.get_json()
+    if request.method == 'POST':
+        mongo.db.rats.insert_one(data)
+        return jsonify({}),200
+
+
+
+
+if __name__=="__main__":
+    app.run(debug=True)
