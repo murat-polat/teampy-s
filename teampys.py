@@ -37,7 +37,7 @@ def load_user(session_token):
     ratdb = mongo.db.ratdb 
     user_data = ratdb.find_one({'session_token': session_token})
     if user_data:
-        return Teacher(user_data)
+        return User(user_data)
     return None
 
 ############## End of DB section  ###############
@@ -257,6 +257,33 @@ class RAT():
         s.append('</tbody>')
         s.append('</table>')
         return ''.join(s)
+    ###############   Endringer   ###################
+    def get_rat(self):
+        return {
+            "private_id": self.private_id,
+            "public_id": self.public_id,
+            "label": self.label,
+            "teams": self.teams,
+            "questions": self.questions,
+            "alternatives": self.alternatives,
+            "solution": self.solution,
+            "card_ids_by_team": self.card_ids_by_team,
+            "grabbed_rats": self.grabbed_rats,
+            "team_colors": self.team_colors
+        }
+
+    def new_html_teacher(self,base_url,private_id):
+        ratdb = mongo.db.ratdb
+        rat = ratdb.rat.find_one({'rat_data.private_id': private_id})
+        print('rat')
+        print(rat)
+        s = []
+        public_url = base_url + 'rat/{}'.format(self.public_id)
+        private_url = base_url + 'teacher/{}'.format(self.private_id)
+        download_url = base_url + 'download/{}'.format(self.private_id)
+        return render_template('new_html_teacher.html', public_url=public_url, private_url=private_url, table=self.get_status_table(base_url), download_url=download_url, rat=rat)
+    
+    ####################################################################
 
     def html_teacher(self, base_url):
         s = []
@@ -372,10 +399,10 @@ def show_rat_teacher(private_id):
         rat = rats_by_private_id[private_id]
         ratdb = mongo.db.ratdb
         session_token = serializer.dumps(['User', 'password'])
-        #rat_data= RAT(private_id, public_id, label, teams, questions, alternatives, solution, team_colors)
-        rat_data = [ rat.html_teacher(request.host_url)]
-        ratdb.insert_one({'rat_data':rat_data}) 
-        return rat.html_teacher(request.host_url)
+        #rat_data = [ rat.html_teacher(request.host_url)]
+        #ratdb.insert_one({'rat_data':rat_data})
+        ratdb.rat.insert_one({'rat_data': rat.get_rat()}) 
+        return rat.new_html_teacher(request.host_url, rat.private_id)
     return "Could not find rat. Currently there are {} RATs stored.".format(len(rats_by_private_id))
 
 @app.route('/card/<id>/')
@@ -426,19 +453,12 @@ def download(private_id, format):
 
 ############  DATA COllECTION  ###############
 
-@app.route('/data')
+@app.route('/new_html_teacher')
 def data():
+    
+    return render_template ('new_html_teacher.html')
 
 
-    return render_template ('data.html')
-
-# @app.route('/data/<private_id>/')
-# def data(private_id, **kwargs):
-#     global rats_by_private_id
-#     if private_id in rats_by_private_id:
-#         rat = rats_by_private_id[private_id] 
-#         return ('data.html', rat.html_teacher(request.host_url,**kwargs))
-#         #return render_template('data.html', rat.html_teacher(request.host_url))
 
 
 if __name__=="__main__":
