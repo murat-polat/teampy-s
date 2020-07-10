@@ -8,17 +8,39 @@ import uuid
 import random
 import string
 import json
-from flask_pymongo import PyMongo
-from flask import jsonify
-
+from flask_pymongo import *
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from itsdangerous import URLSafeSerializer
 
 app = Flask(__name__)
 
-############  Mongo DB connection ################
-app.config["MONGO_DBNAME"] = "rats"
-app.config["MONGO_URI"] = "mongodb://localhost:27017/rats"
-mongo = PyMongo(app)
 
+############  Mongo DB section/connection ################
+app.config['SECRET_KEY'] = 'Hemmelig!'  ## is required
+app.config["MONGO_DBNAME"] = "ratdb"  ## DB name
+app.config["MONGO_URI"] = "mongodb://localhost:27017/ratdb"   ## local DB, But can be used MLab(free 500MB) https://mlab.com/
+
+mongo = PyMongo(app)
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
+serializer = URLSafeSerializer(app.secret_key)
+
+class User(UserMixin):
+    def __init__(self, user_data):
+        self.user_data = user_data
+
+    def get_id(self):
+        return self.user_data['session_token']
+
+@login_manager.user_loader
+def load_user(session_token):
+    ratdb = mongo.db.ratdb 
+    user_data = ratdb.find_one({'session_token': session_token})
+    if user_data:
+        return Teacher(user_data)
+    return None
+
+############## End of DB section  ###############
 # all scratchcards
 cards = {}
 
@@ -213,7 +235,7 @@ class RAT():
         self.card_ids_by_team = {}
         self.grabbed_rats = []
         self.team_colors = team_colors
-        #mongo.db.rat.insert_one(RAT(private_id,public_id,label,teams,questions,alternatives,solution,team_colors))
+        
     
     def get_status_table(self, base_url):
         s = []
@@ -286,7 +308,10 @@ def return_student_page(public_id):
 
 @app.route('/join', methods=['POST', 'GET'])
 def join():
-    rat = request.args['rat']
+    rats= mongo.db.rats
+    rat = request.args['rat']    
+    rats.insert_one(rat)
+        
     return return_student_page(rat)
 
 @app.route('/rat/<public_id>/')
@@ -332,14 +357,24 @@ def create():
         card = Card.new_card(label, str(team), int(questions), int(alternatives), solution, rat.team_colors[team-1])
         cards[card.id] = card
         rat.card_ids_by_team[str(team)] = card.id
+        ratdb = mongo.db.ratdb
+        session_token = serializer.dumps(['User', 'password'])
+        card = [label, teams, questions, alternatives, solution]
+        ratdb.insert_one({'card':card})
                
     return redirect("../teacher/{}".format(rat.private_id), code=302)
 
 @app.route('/teacher/<private_id>/')
-def show_rat_teacher(private_id):
+def show_rat_teacher(private_id):    
     global rats_by_private_id
+    global rats_by_public_id    
     if private_id in rats_by_private_id:
-        rat = rats_by_private_id[private_id] 
+        rat = rats_by_private_id[private_id]
+        ratdb = mongo.db.ratdb
+        session_token = serializer.dumps(['User', 'password'])
+        #rat_data= RAT(private_id, public_id, label, teams, questions, alternatives, solution, team_colors)
+        rat_data = [ rat.html_teacher(request.host_url)]
+        ratdb.insert_one({'rat_data':rat_data}) 
         return rat.html_teacher(request.host_url)
     return "Could not find rat. Currently there are {} RATs stored.".format(len(rats_by_private_id))
 
@@ -391,20 +426,19 @@ def download(private_id, format):
 
 ############  DATA COllECTION  ###############
 
-@app.route('/data', methods=['GET','POST'])
-def data(**kwargs):    
-    ''' data collection '''
-    if request.method == 'GET':
-        query = request.args
-        data = mongo.db.rats.find_one(query)
-        return jsonify(data),200
-    
-    data = request.get_json()
-    if request.method == 'POST':
-        mongo.db.rats.insert_one(data)
-        return jsonify({}),200
+@app.route('/data')
+def data():
 
 
+    return render_template ('data.html')
+
+# @app.route('/data/<private_id>/')
+# def data(private_id, **kwargs):
+#     global rats_by_private_id
+#     if private_id in rats_by_private_id:
+#         rat = rats_by_private_id[private_id] 
+#         return ('data.html', rat.html_teacher(request.host_url,**kwargs))
+#         #return render_template('data.html', rat.html_teacher(request.host_url))
 
 
 if __name__=="__main__":

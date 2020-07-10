@@ -1,0 +1,139 @@
+@app.route('/data', methods=['GET','POST'])
+def data(**kwargs):    
+    ''' data collection '''
+    if request.method == 'GET':
+        query = request.args
+        data = mongo.db.rats.find_one(query)
+        return jsonify(data),200
+    
+    data = request.get_json()
+    if request.method == 'POST':
+        mongo.db.rats.insert_one(data)
+        return jsonify({}),200
+
+    return render_template('data.html')
+
+<table class="table table-sm">
+    <thead>
+        <tr>
+            <th scope="col">Team</th>
+            <th scope="col">Status</th>
+            <th scope="col">Score</th>
+            <th scope="col">1</th>
+            <th scope="col">2</th>
+            <th scope="col">3</th>
+            <th scope="col">4</th>
+            <th scope="col">5</th>
+            <th scope="col">6</th>
+            <th scope="col">7</th>
+            <th scope="col">8</th>
+            <th scope="col">9</th>
+            <th scope="col">10</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <th scope="row">
+                <a href="http://localhost:5000/card/0c2e9a33-1197-44fb-91c6-2cb1a35adf5a">1</a>
+            </th>
+            <td>idle</td>
+            <td>0</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr>
+            <th scope="row">
+                <a href="http://localhost:5000/card/5c51f721-f737-4cb5-a0ff-91ca49f8382f">2</a>
+            </th>
+            <td>idle</td>
+            <td>0</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr>
+            <th scope="row">
+                <a href="http://localhost:5000/card/120960b1-74ec-4fe2-8e94-7ce644978e00">3</a>
+            </th>
+            <td>idle</td>
+            <td>0</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr>
+            <th scope="row">
+                <a href="http://localhost:5000/card/15d2d3b4-bc8d-4cd7-83fb-cef5e6479080">4</a>
+            </th>
+            <td>idle</td>
+            <td>0</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr>
+            <th scope="row">
+                <a href="http://localhost:5000/card/5abdecf2-feb4-4f8a-888a-91388bca0583">5</a>
+            </th>
+            <td>idle</td>
+            <td>0</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr>
+            <th scope="row">
+                <a href="http://localhost:5000/card/e1f60a74-0e03-4c59-8882-54777dd08d0e">6</a>
+            </th>
+            <td>idle</td>
+            <td>0</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr>
+            <th scope="row">
+                <a href="http://localhost:5000/card/2e6e89ff-1daf-47d3-9d51-275c508f50f3">7</a></th><td>idle</td><td>0</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><th scope="row"><a href="http://localhost:5000/card/433f582e-025a-4510-8913-bd98b9aea988">8</a></th><td>idle</td><td>0</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><th scope="row"><a href="http://localhost:5000/card/38ee5e32-ce59-4f58-8e27-91e7fd8742b2">9</a></th><td>idle</td><td>0</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><th scope="row"><a href="http://localhost:5000/card/21623700-496b-4e1b-9690-4e06361fef05">10</a></th><td>idle</td><td>0</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr></tbody></table> 
